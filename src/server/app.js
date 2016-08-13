@@ -18,10 +18,10 @@ webSocketServer.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
         console.log("message: ", message);
         const parsedMessage = JSON.parse(message);
-        const response = JSON.stringify(handleMove(parsedMessage));
+        const response = handleMove(parsedMessage);
 
         if (response) {
-            webSocketServer.clients.forEach(client => client.send(response));
+            webSocketServer.clients.forEach(client => client.send(JSON.stringify(response)));
         }
     });
 });
