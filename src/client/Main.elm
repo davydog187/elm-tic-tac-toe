@@ -111,7 +111,11 @@ subscriptions model =
 type alias ServerMessage = { x : Int, y : Int, msgType : String, player : String }
 
 messageDecoder =
-    object4 ServerMessage ("x" := Json.Decode.int) ("y" := Json.Decode.int) ("msgType" := Json.Decode.string) ("player" := Json.Decode.string)
+    object4 ServerMessage
+        ("x" := Json.Decode.int)
+        ("y" := Json.Decode.int)
+        ("msgType" := Json.Decode.string)
+        ("player" := Json.Decode.string)
 
 
 decoder : String -> Msg
@@ -157,7 +161,15 @@ moveToText move =
 
 viewSquare : Move -> Int -> Int -> Html Msg
 viewSquare move x y =
-    button [onClick (MakeMove x y), style [("height", "100px"), ("width", "100px"), ("vertical-align", "top")]] [ text (moveToText move) ]
+    let
+        buttonStyle =
+            style
+                [ ("height", "100px")
+                , ("width", "100px")
+                , ("vertical-align", "top")
+                ]
+    in
+        button [onClick (MakeMove x y), buttonStyle] [ text (moveToText move) ]
 
 viewMessage : String -> Html Msg
 viewMessage msg =
