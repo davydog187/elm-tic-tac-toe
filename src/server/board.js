@@ -42,8 +42,8 @@ export function hasWon({ board, x, y }) {
 
         let same = true;
 
-        for (var j = 0; j < y; ++j) {
-            if (board[i][j] !== first) {
+        for (var j = 1; j < y; ++j) {
+            if (board[j][i] !== first) {
                 same = false;
             }
         }
