@@ -6,18 +6,12 @@ let turn;
 export function handleMove({ player, x, y}) {
     console.log(`${player} is moving to (${x},${y})`);
 
+    // Move is out of bounds, or existing move is at that position
     if (x >= game.x || y >= game.y || game.board[x][y]) {
         return null;
-        /*
-        return response.send({
-            msgType: "INVALID",
-            player,
-            x,
-            y
-        });
-        */
     }
 
+    // Don't move out of turn
     if (turn === player) {
         return null;
     }

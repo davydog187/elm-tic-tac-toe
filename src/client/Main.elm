@@ -22,11 +22,11 @@ ticTacToeServer =
 
 -- MODEL
 
-
+type alias Board = Array (Array Move)
 type alias Model =
     { name : String
     , winner: Maybe String
-    , board : Array (Array Move)
+    , board : Board
     }
 
 
@@ -34,6 +34,7 @@ init : (Model, Cmd Msg)
 init =
     (Model "Your name" Nothing initBoard, Cmd.none)
 
+initBoard : Board
 initBoard =
     Array.repeat 3 (Array.repeat 3 None)
 
@@ -52,6 +53,7 @@ type Msg
     | GameWin String Int Int
     | Invalid
 
+setIn : Int -> Int -> String -> Board -> Board
 setIn x y name array =
     let
         row = getIn x array
@@ -59,6 +61,7 @@ setIn x y name array =
     in
         Array.set x newRow array
 
+getIn : Int -> Board -> Array Move
 getIn x array =
     let
         row = Array.get x array
@@ -68,6 +71,7 @@ getIn x array =
             Just theRow -> theRow
 
 
+makePlayerMove : Board -> String -> Int -> Int -> Board
 makePlayerMove board name x y =
     setIn x y name board
 
@@ -86,7 +90,7 @@ update msg {name, winner, board} =
         Invalid ->
             (Model name winner board, Cmd.none)
 
-
+encodeMove : String -> Int -> Int -> String
 encodeMove name x y =
     let
         msg =
@@ -98,7 +102,6 @@ encodeMove name x y =
                 ]
     in
         encode 0 msg
-
 
 
 -- SUBSCRIPTIONS
@@ -127,12 +130,12 @@ decoder string =
             Ok message -> convertMessageToType message
             Err _ -> Invalid
 
+convertMessageToType : ServerMessage -> Msg
 convertMessageToType { msgType, x, y, player } =
         case msgType of
             "MOVED" -> OtherMove player x y
             "WIN" -> GameWin player x y
             _ -> Invalid
-
 
 -- VIEW
 
@@ -141,8 +144,8 @@ view : Model -> Html Msg
 view { name, winner, board } =
     let
         createRow index = Array.indexedMap (\col square -> (viewSquare square index col))
-        gameBoard = Array.indexedMap (\row list -> createRow row list) board
-        combined = Array.foldr (Array.append) Array.empty gameBoard
+        gameBoard = Array.indexedMap createRow board
+        gameBoardList = Array.foldr (Array.append) Array.empty gameBoard |> Array.toList
         winnerText = case winner of
             Nothing -> ""
             Just person -> person ++ " has Won!!!"
@@ -150,10 +153,10 @@ view { name, winner, board } =
         div []
             [ input [onInput InputName, Html.Attributes.value name] []
             , h1 [ style [("color", "red")]] [ text winnerText ]
-            , div [ class "game", style [("width", "300px")]] (Array.toList combined)
+            , div [ class "game", style [("width", "300px")]] gameBoardList
             ]
 
-
+moveToText : Move -> String
 moveToText move =
     case move of
         None -> ""
@@ -170,7 +173,3 @@ viewSquare move x y =
                 ]
     in
         button [onClick (MakeMove x y), buttonStyle] [ text (moveToText move) ]
-
-viewMessage : String -> Html Msg
-viewMessage msg =
-      div [] [ text msg ]
