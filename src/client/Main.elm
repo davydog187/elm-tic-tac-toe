@@ -1,3 +1,5 @@
+module TicTacToe exposing (main)
+
 import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
@@ -6,19 +8,15 @@ import WebSocket
 import Array exposing (..)
 import Json.Decode exposing (..)
 import Json.Encode exposing (..)
+import Debug exposing (log)
 
 main =
-    App.program
+    App.programWithFlags
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
         }
-
-ticTacToeServer : String
-ticTacToeServer =
-      "ws://localhost:8080"
-
 
 -- MODEL
 
@@ -27,12 +25,15 @@ type alias Model =
     { name : String
     , winner: Maybe String
     , board : Board
+    , host : String
     }
 
+type alias Flags = { hostname : String }
 
-init : (Model, Cmd Msg)
-init =
-    (Model "Your name" Nothing initBoard, Cmd.none)
+
+init : Flags -> (Model, Cmd Msg)
+init { hostname } =
+    (Model "Your name" Nothing initBoard hostname, Cmd.none)
 
 initBoard : Board
 initBoard =
@@ -77,18 +78,18 @@ makePlayerMove board name x y =
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg {name, winner, board} =
+update msg {name, winner, board, host} =
     case msg of
         InputName newInput ->
-            (Model newInput winner board, Cmd.none)
+            (Model newInput winner board host, Cmd.none)
         MakeMove x y ->
-            (Model name winner board, WebSocket.send ticTacToeServer (encodeMove name x y))
+            (Model name winner board host, WebSocket.send host (encodeMove name x y))
         OtherMove othername x y ->
-            (Model name winner (makePlayerMove board othername x y), Cmd.none)
+            (Model name winner (makePlayerMove board othername x y) host, Cmd.none)
         GameWin player x y ->
-            (Model name (Just player) (makePlayerMove board player x y), Cmd.none)
+            (Model name (Just player) (makePlayerMove board player x y) host, Cmd.none)
         Invalid ->
-            (Model name winner board, Cmd.none)
+            (Model name winner board host, Cmd.none)
 
 encodeMove : String -> Int -> Int -> String
 encodeMove name x y =
@@ -109,7 +110,7 @@ encodeMove name x y =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-      WebSocket.listen ticTacToeServer decoder
+      WebSocket.listen model.host decoder
 
 type alias ServerMessage = { x : Int, y : Int, msgType : String, player : String }
 
@@ -124,7 +125,8 @@ messageDecoder =
 decoder : String -> Msg
 decoder string =
     let
-        decoded = decodeString messageDecoder string
+
+        decoded = decodeString messageDecoder (log "message" string)
     in
         case decoded of
             Ok message -> convertMessageToType message
